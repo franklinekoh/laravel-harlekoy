@@ -7,7 +7,7 @@ use App\Models\User;
 Use App\Enum\TimeZoneEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection;
-use Symfony\Component\Console\Command\Command as CommandAlias;
+use App\Dto\UpdatedUserDto;
 use Throwable;
 
 class UpdateUserDetails extends Command
@@ -34,6 +34,7 @@ class UpdateUserDetails extends Command
 
         DB::beginTransaction();
         try {
+            $updatedUserDetails = [];
             //  Assuming the table has thousands of records
             User::chunk(250, function (Collection $users){
                 foreach ($users as $user){
@@ -43,13 +44,28 @@ class UpdateUserDetails extends Command
                     $chosenTimeZoneId = rand(0, sizeof($timeZones) -1);
                     $chosenTimeZone = $timeZones[$chosenTimeZoneId];
 
-                    User::where(User::EMAIL, $user->email)
-                        ->update([
-                            User::FIRSTNAME => fake()->firstName(),
-                            User::LASTNAME => fake()->lastName(),
-                            User::TIMEZONE => $chosenTimeZone->value
-                        ]);
+                    $updateData = [
+                        User::FIRSTNAME => fake()->firstName(),
+                        User::LASTNAME => fake()->lastName(),
+                        User::TIMEZONE => $chosenTimeZone->value
+                    ];
+
+                    $updatedRows = User::where(User::EMAIL, $user->email)
+                        ->update($updateData);
+                    if ($updatedRows > 0){
+                        $updatedUser = new UpdatedUserDto(
+                            $user->email,
+                            $updateData[User::FIRSTNAME],
+                            $updateData[User::LASTNAME],
+                            $updateData[User::TIMEZONE],
+                            false,
+                            0,
+                        );
+                        $updatedUserDetails[] = $updatedUser;
+                    }
                 }
+
+                var_dump('hallo');
             });
 
             DB::commit();

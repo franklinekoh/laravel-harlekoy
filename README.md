@@ -7,6 +7,8 @@ A worker that users information on a 3rd party application through batch API cal
 #### Installation
 Clone project
 
+Switch to branch `update-thirdparty-provider`
+
 copy .env.example to .env with `cp .env.example .env`
 
 update database credentials at the connection variable with prefix of `DB_`, e.g `DB_DATABASE`, `DB_USERNAME`
