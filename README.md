@@ -1,7 +1,7 @@
-## 3rd party provider worker
+## 3rd party service worker
 A worker that users information on a 3rd party application through batch API call intermediately
 
-### use PHP ^8.2
+#### use PHP ^8.2
 
 
 #### Installation
@@ -13,7 +13,9 @@ update database credentials at the connection variable with prefix of `DB_`, e.g
 
 run `composer install`
 
-#### running project
+### running project
 
 run `php artisan serve`
+
+run `php artisan app:update-user-details` to update user details 
 
