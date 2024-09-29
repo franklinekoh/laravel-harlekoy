@@ -1,5 +1,5 @@
 ## 3rd party service worker
-A worker that updates users information on a 3rd party application through batch API call intermediately
+A worker that updates users information on a 3rd party application
 
 #### use PHP ^8.2
 
