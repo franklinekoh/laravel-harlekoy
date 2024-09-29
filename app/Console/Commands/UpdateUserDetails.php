@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection;
 use App\Dto\UpdatedUserDto;
 use Throwable;
+use App\Events\UserUpdated;
 
 class UpdateUserDetails extends Command
 {
@@ -34,9 +35,10 @@ class UpdateUserDetails extends Command
 
         DB::beginTransaction();
         try {
-            $updatedUserDetails = [];
+
             //  Assuming the table has thousands of records
             User::chunk(250, function (Collection $users){
+                $updatedUserDetails = [];
                 foreach ($users as $user){
                     // In real-world project, One May decide to create a helper function for getting a random timezone
                     // depending on how often random timezones needs to be assigned.
@@ -58,14 +60,13 @@ class UpdateUserDetails extends Command
                             $updateData[User::FIRSTNAME],
                             $updateData[User::LASTNAME],
                             $updateData[User::TIMEZONE],
-                            false,
+                            0,
                             0,
                         );
                         $updatedUserDetails[] = $updatedUser;
                     }
                 }
-
-                var_dump('hallo');
+                event(new UserUpdated($updatedUserDetails));
             });
 
             DB::commit();
