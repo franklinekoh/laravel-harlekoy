@@ -66,6 +66,7 @@ class UpdateUserDetails extends Command
                         $updatedUserDetails[] = $updatedUser;
                     }
                 }
+//                Dispatches event to store update info for batch api post to 3rd party
                 event(new UserUpdated($updatedUserDetails));
             });
 
