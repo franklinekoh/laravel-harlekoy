@@ -6,6 +6,7 @@ use App\Events\UserUpdated;
 use Illuminate\Console\Command;
 use App\Models\UpdatedUser;
 use App\Services\ThirdPartyService;
+use Illuminate\Support\Facades\DB;
 
 class postUpdatedUsersData extends Command
 {
@@ -41,56 +42,70 @@ class postUpdatedUsersData extends Command
      */
     public function handle()
     {
-        $updatedUsers = UpdatedUser::where(UpdatedUser::IS_API_POST_SUCCESS, false)
-                            ->orWhere(UpdatedUser::RETRY, '>', 0)
-                            ->limit(1000)
-                            ->get();
 
-        $subscribers = [];
-        foreach ($updatedUsers as $updatedUser){
-            $subscriber = [
-                'email' => $updatedUser->email,
-                'name' => $updatedUser->firstname.' '.$updatedUser->lastname,
-                'timezone' => $updatedUser->timezone
-            ];
-            $subscribers[] = $subscriber;
-        }
+        DB::beginTransaction();
+        try {
+            $updatedUsers = UpdatedUser::where(UpdatedUser::IS_API_POST_SUCCESS, false)
+                ->orWhere(UpdatedUser::RETRY, '>', 0)
+                ->limit(1000)
+                ->get();
 
-        $apiResponse = $this->thirdPartyService->postSubscribersData($subscribers);
-        /**
-         * Assuming the batch endpoint returns data in this format
-         * {
+            $subscribers = [];
+            foreach ($updatedUsers as $updatedUser){
+                $subscriber = [
+                    'email' => $updatedUser->email,
+                    'name' => $updatedUser->firstname.' '.$updatedUser->lastname,
+                    'timezone' => $updatedUser->timezone
+                ];
+                $subscribers[] = $subscriber;
+            }
+
+            $apiResponse = $this->thirdPartyService->postSubscribersData($subscribers);
+            /**
+             * Assuming the batch endpoint returns data in this format
+             * {
             'success': true,
-         *  'data': [
-         * {
+             *  'data': [
+             * {
             'email': 'ekohfranklin@gmail.com',
-         *  'name': 'Franklin Ekoh',
-         *  'timezone': 'GMT + 1'
-         * },
-         * ...
-         * ]
-         * ...
-         * }
-         *
-         *
-         */
+             *  'name': 'Franklin Ekoh',
+             *  'timezone': 'GMT + 1'
+             * },
+             * ...
+             * ]
+             * ...
+             * }
+             *
+             *
+             */
 
-        if ($apiResponse['success'] === 'false'){
-            foreach ($updatedUsers as $failedSubscriber){
-                UpdatedUser::where(UpdatedUser::EMAIL, $failedSubscriber['email'])
-                    ->update([
-                        UpdatedUser::RETRY => $failedSubscriber->retry + 1
-                    ]);
+            if ($apiResponse['success'] === 'false'){
+                foreach ($updatedUsers as $failedSubscriber){
+                    UpdatedUser::where(UpdatedUser::EMAIL, $failedSubscriber['email'])
+                        ->update([
+                            UpdatedUser::RETRY => $failedSubscriber->retry + 1
+                        ]);
+                }
             }
-        }
-        if ($apiResponse['success'] && sizeof($apiResponse['data']) > 0){
-            foreach ($apiResponse['data'] as $datum){
-                UpdatedUser::where(UpdatedUser::EMAIL, $datum['email'])
-                    ->update([
-                        UpdatedUser::IS_API_POST_SUCCESS => 1,
-                        UpdatedUser::RETRY => 0
-                    ]);
+
+            if ($apiResponse['success'] && sizeof($apiResponse['data']) > 0){
+                foreach ($apiResponse['data'] as $datum){
+                    UpdatedUser::where(UpdatedUser::EMAIL, $datum['email'])
+                        ->update([
+                            UpdatedUser::IS_API_POST_SUCCESS => 1,
+                            UpdatedUser::RETRY => 0
+                        ]);
+                }
             }
+
+            DB::commit();
+            return Command::SUCCESS;
+        }catch (Throwable $exception){
+            DB::rollBack();
+            report($exception);
+            return Command::FAILURE;
         }
+
+
     }
 }

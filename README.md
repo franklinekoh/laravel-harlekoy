@@ -11,7 +11,7 @@ Switch to branch `update-thirdparty-provider`
 
 copy .env.example to .env with `cp .env.example .env`
 
-update database credentials at the connection variable with prefix of `DB_`, e.g `DB_DATABASE`, `DB_USERNAME`
+update database credentials on `.env` at the connection variable with prefix of `DB_`, e.g `DB_DATABASE`, `DB_USERNAME`
 
 run `composer install`
 
@@ -40,7 +40,7 @@ Lastly, depending on the feedback from above and other factors like time constra
 
 - Write Unit Tests for the feature
 - Change the frequency of the `post-update...` Cron Job to reduce data redundancy on 3rd party service
-- 
+- integrate individual endpoint to be used
 
 
 

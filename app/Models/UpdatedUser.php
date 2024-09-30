@@ -24,5 +24,7 @@ class UpdatedUser extends Model
         'email',
         'lastname',
         'timezone',
+        'retry',
+        'is_api_post_success'
     ];
 }
